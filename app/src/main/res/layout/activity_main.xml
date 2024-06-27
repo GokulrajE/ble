@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:app="http://schemas.android.com/apk/res-auto"
+xmlns:tools="http://schemas.android.com/tools"
+android:layout_width="match_parent"
+android:layout_height="match_parent"
+android:background="#E4E4E4"
+
+tools:context=".MainActivity"
+    >
+
+<androidx.cardview.widget.CardView
+    android:id="@+id/liner"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardBackgroundColor="#5A8F8A"
+    app:cardCornerRadius="20dp"
+    app:contentPadding="10dp"
+    app:cardElevation="10dp">
+
+    <RelativeLayout
+
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/connect">
+
+
+        <TextView
+            android:id="@+id/text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+
+            android:text="IMU"
+            android:textAlignment="center"
+
+            android:textColor="@color/white"
+            android:textSize="30dp"
+
+            />
+
+
+        <Button
+            android:id="@+id/show"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:background="@drawable/roundedcorner"
+            android:drawableRight="@drawable/baseline_bluetooth_connected_24"
+            android:text="connect"
+            android:textAlignment="center"
+
+            android:textColor="#F3F6EF"
+            android:textSize="16dp"
+            android:textStyle="bold" />
+    </RelativeLayout>
+
+            <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+                android:layout_marginTop="60dp"
+            android:id="@+id/name"
+            android:elevation="8dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="10dp"
+            app:cardBackgroundColor="@color/white"
+
+            ><TextView
+                android:padding="20dp"
+                android:id="@+id/textname"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:drawableRight="@drawable/baseline_mood_24"
+                android:text="Hello!.."
+                android:textStyle="bold"
+                android:textColor="#0E0E0E"
+                android:textSize="20dp"
+                android:textFontWeight="5"/>
+
+
+        </androidx.cardview.widget.CardView>
+
+    <RelativeLayout
+        android:layout_below="@+id/name"
+        android:id="@+id/datedays"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+
+        android:layout_marginTop="140dp"
+        android:padding="5dp">
+
+        <androidx.cardview.widget.CardView
+
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            app:cardCornerRadius="20dp"
+            app:cardBackgroundColor="#E4E4E4"
+            >
+            <TextView
+                android:id="@+id/datetext"
+                android:padding="20dp"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:drawableLeft="@drawable/baseline_calendar_today_24"
+                android:text="Date:22-02-2024"
+                android:textSize="18dp"
+                android:textColor="#070605"
+                android:textStyle="normal"/>
+        </androidx.cardview.widget.CardView>
+        <androidx.cardview.widget.CardView
+            android:layout_alignParentRight="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            app:cardCornerRadius="20dp"
+            app:cardBackgroundColor="#E4E4E4"
+            >
+            <TextView
+                android:id="@+id/days"
+                android:padding="20dp"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:drawableLeft="@drawable/baseline_accessibility_new_24"
+                android:text="Days of use: 10"
+                android:textSize="18dp"
+                android:textStyle="normal"
+                android:textColor="#050505"/>
+
+        </androidx.cardview.widget.CardView>
+
+    </RelativeLayout>
+    <TextView
+        android:id="@+id/load"
+        android:layout_marginTop="220dp"
+        android:layout_marginLeft="200dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        />
+  </androidx.cardview.widget.CardView>
+
+
+<ScrollView
+    android:id="@+id/scroll"
+    android:layout_below="@id/liner"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="20dp">
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <androidx.viewpager2.widget.ViewPager2
+
+            android:id="@+id/viewpager"
+            android:layout_width="match_parent"
+            android:layout_height="500dp"/>
+<!--            android:layout_below="@id/liner"-->
+
+<!--            android:layout_marginTop="20dp" />-->
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/chart"
+            android:layout_below="@+id/viewpager"
+            android:layout_marginTop="10dp"
+            app:cardBackgroundColor="#D4E6E4"
+            android:elevation="10dp"
+            app:cardCornerRadius="30dp"
+
+
+            >
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/viewpager"
+                android:padding="15dp"
+                app:cardBackgroundColor="#DFE8E7"
+                >
+
+                <TextView
+                    android:id="@+id/textnamet"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="TOTAL USE"
+                    android:textColor="#0A0A0B"
+                    android:textSize="20dp"
+                    android:textStyle="normal" />
+
+                <RelativeLayout
+                    android:id="@+id/sum"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/textnamet"
+                    android:layout_marginTop="10dp">
+
+                    <TextView
+                        android:id="@+id/left"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="LEFT:"
+                        android:textColor="#030405"
+                        android:textSize="15dp"
+                        android:textStyle="normal" />
+
+                    <TextView
+                        android:id="@+id/right"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentRight="true"
+                        android:text="RIGHT:"
+                        android:textColor="#010102"
+                        android:textSize="15dp"
+                        android:textStyle="normal" />
+                </RelativeLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/sum"
+                    android:layout_marginTop="8dp"
+                    android:text="LAST SEEN :"
+                    android:textColor="#08090B"
+                    android:textSize="20dp"
+                    android:textStyle="normal" />
+
+                <TextView
+                    android:id="@+id/lastu"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/sum"
+                    android:layout_marginStart="140dp"
+                    android:layout_marginTop="12dp"
+                    android:text=""
+                    android:textColor="#121212"
+                    android:textSize="15dp"
+                    android:textStyle="normal" />
+            </RelativeLayout>
+        </androidx.cardview.widget.CardView>
+        <androidx.cardview.widget.CardView
+            android:id="@+id/commentcard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_below="@+id/chart"
+            android:layout_marginBottom="10dp"
+            app:cardElevation="10dp"
+            app:cardCornerRadius="20dp"
+            app:contentPadding="10dp">
+            <TextView
+                android:id="@+id/comments"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="comments.."/>
+
+        </androidx.cardview.widget.CardView>
+
+    </RelativeLayout>
+</ScrollView>
+
+
+
+
+
+
+
+</RelativeLayout>
