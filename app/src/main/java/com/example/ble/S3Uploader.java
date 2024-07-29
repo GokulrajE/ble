@@ -1,5 +1,7 @@
 package com.example.ble;
 
+import static com.example.ble.overallChartFragment.dir;
+import static com.example.ble.overallChartFragment.fileHandling;
 import static java.util.Arrays.sort;
 
 import android.content.Context;
@@ -48,8 +50,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 public class S3Uploader {
-    private static final String ACCESS_KEY = "AKIA6GBMH3ERSCGEPAFD";
-    private static final String SECRET_KEY = "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";
+    private static String ACCESS_KEY = "AKIA6GBMH3ERZIAA2ODG";
+    private static String SECRET_KEY = "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";
     static final String BUCKET_NAME = "clinicianappbucket";
     static BasicAWSCredentials awsCreds = new BasicAWSCredentials(ACCESS_KEY, SECRET_KEY);
     static AmazonS3Client s3Client = new AmazonS3Client(awsCreds, Region.getRegion(Regions.EU_NORTH_1));
