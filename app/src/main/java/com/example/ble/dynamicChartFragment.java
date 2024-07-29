@@ -158,6 +158,7 @@ public class dynamicChartFragment extends Fragment {
         try{
             if(mChart!= null) {
                 mChart.setData(lineData);
+
                 XAxis xAxis = mChart.getXAxis();
                 xAxis.setValueFormatter(new XAxisValueFormatter(labels)); // Set custom X-axis labels
                 mChart.invalidate(); // Refresh chart
@@ -180,6 +181,7 @@ public class dynamicChartFragment extends Fragment {
         mChart.setScaleYEnabled(true);
         mChart.setBackgroundColor(Color.rgb(255,255,255));
         XAxis xAxis = mChart.getXAxis();
+        xAxis.setGranularity(1f);
         mChart.getXAxis().setDrawGridLines(false);
         mChart.getAxisLeft().setDrawGridLines(false);
         mChart.getAxisRight().setDrawGridLines(false);

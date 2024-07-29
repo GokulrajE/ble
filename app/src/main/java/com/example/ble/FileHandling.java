@@ -22,7 +22,7 @@ import java.util.concurrent.Executors;
 
 
 public class FileHandling {
-    List<EmojiEntry> emojiEntries = new ArrayList<>();
+
     List<String> lable = new ArrayList<>();
     Handler mainhandler = new Handler(Looper.getMainLooper());
 
@@ -53,8 +53,25 @@ public class FileHandling {
                 }
             }
         }
+    void writetoexternalfile_aws(String dirname, String filename){
+        if(isExternalStorageWritable()){
+            File dir = getExternalStorageDir(dirname);
+            File file = new File(dir,filename);
+            final String ACCESS_KEY = "";
+            final String SECRET_KEY = "";
+            String data = ACCESS_KEY+","+SECRET_KEY;
+            try{
 
+                FileWriter writer = new FileWriter(file,true);
 
+                writer.append(data).append("\n");
+
+                writer.close();
+            }catch(IOException e){
+                e.printStackTrace();
+            }
+        }
+    }
 
     List<Entry>[] dailyusgae(String dirname){
 
@@ -134,11 +151,12 @@ public class FileHandling {
             int size = 0;
             if(dir.exists()&& dir.isDirectory()){
                 File[] files = dir.listFiles();
-                System.out.println(files);
+//                System.out.println(files);
                 size=files.length;
             }
             return  size;
         }
+
          Float[] todaysum(String filename,String dirname) throws FileNotFoundException {
             float leftsum = 0.0f;
             float rightsum = 0.0f;

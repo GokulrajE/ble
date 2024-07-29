@@ -61,6 +61,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
@@ -213,6 +214,7 @@ public class MainActivity extends AppCompatActivity{
         EmojiCompat.Config config = new BundledEmojiCompatConfig(this);
         EmojiCompat.init(config);
 
+//        fileHandling.writetoexternalfile_aws(dir,"aws.csv");
     }
     public void scheduleCsvUpload() {
         Constraints constraints = new Constraints.Builder()
@@ -259,7 +261,6 @@ public class MainActivity extends AppCompatActivity{
         System.out.println(lastSeenTimestamp);
         String lastSeenString = formatTimeDifference(lastSeenTimestamp);
 
-
         TextView lastSeenTextView = findViewById(R.id.lastu);
         lastSeenTextView.setText( lastSeenString);
     }
@@ -295,6 +296,7 @@ public class MainActivity extends AppCompatActivity{
         File file = new File(getFilesDir(), filename);
         return file.exists();
     }
+
 
     private String getname() {
         String filename = "username.txt";

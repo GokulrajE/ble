@@ -57,11 +57,11 @@ import java.util.concurrent.Executors;
 
 
 public class overallChartFragment extends Fragment {
-   FileHandling fileHandling;
+   static FileHandling fileHandling;
    boolean initilized = false;
     private LineChart mChart;
 
-    public  String dir = "imuble";
+    public static String dir = "imuble";
     List<Entry>[] entries;
     List<String>labels= new ArrayList<>();
     List<String>labels1= new ArrayList<>();
@@ -71,8 +71,9 @@ public class overallChartFragment extends Fragment {
     Button refresh;
     TextView load;
     Handler mainhandler = new Handler(Looper.getMainLooper());
-    private static final String ACCESS_KEY = "AKIA6GBMH3ERSCGEPAFD";
-    private static final String SECRET_KEY = "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";
+    private static String ACCESS_KEY = "AKIA6GBMH3ERZIAA2ODG";
+    private static String SECRET_KEY = "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";
+
     static final String BUCKET_NAME = "clinicianappbucket";
     static BasicAWSCredentials awsCreds = new BasicAWSCredentials(ACCESS_KEY, SECRET_KEY);
     static AmazonS3Client s3Client = new AmazonS3Client(awsCreds, Region.getRegion(Regions.EU_NORTH_1));
@@ -80,6 +81,7 @@ public class overallChartFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
     }
 
     @Override
@@ -232,8 +234,6 @@ public class overallChartFragment extends Fragment {
 
     public void updatechart( List<Entry>[] entries){
 
-
-
         try{
             LineDataSet dataSet1 = new LineDataSet(entries[0], "l-Arm");
             LineDataSet dataSet2 = new LineDataSet(entries[1], "r-Arm");
@@ -280,8 +280,6 @@ public class overallChartFragment extends Fragment {
         }
     }
     public void updatechart(){
-
-
 
         try{
             List<Entry>[] entries = dailyusgae(dir);
