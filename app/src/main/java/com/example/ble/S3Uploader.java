@@ -53,10 +53,10 @@ import java.util.concurrent.Executors;
 public class S3Uploader {
 
 
-    private static String ACCESS_KEY = "";
-    private static String SECRET_KEY = "";
+    private static String ACCESS = "";
+    private static String SECRET = "";
     static final String BUCKET_NAME = "clinicianappbucket";
-    static BasicAWSCredentials awsCreds = new BasicAWSCredentials(ACCESS_KEY, SECRET_KEY);
+    static BasicAWSCredentials awsCreds = new BasicAWSCredentials(ACCESS, SECRET);
     static AmazonS3Client s3Client = new AmazonS3Client(awsCreds, Region.getRegion(Regions.EU_NORTH_1));
 
     static File getExternalStorageDir(String dirname) {

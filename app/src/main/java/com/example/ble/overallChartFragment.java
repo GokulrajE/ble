@@ -73,11 +73,11 @@ public class overallChartFragment extends Fragment {
     Button refresh;
     TextView load;
     Handler mainhandler = new Handler(Looper.getMainLooper());
-    private static String ACCESS_KEY = "";
-    private static String SECRET_KEY = "";
+    private static String ACCESS = "";
+    private static String SECRET = "";
     String username;
     static final String BUCKET_NAME = "clinicianappbucket";
-    static BasicAWSCredentials awsCreds = new BasicAWSCredentials(ACCESS_KEY, SECRET_KEY);
+    static BasicAWSCredentials awsCreds = new BasicAWSCredentials(ACCESS, SECRET);
     static AmazonS3Client s3Client = new AmazonS3Client(awsCreds, Region.getRegion(Regions.EU_NORTH_1));
 
     @Override
