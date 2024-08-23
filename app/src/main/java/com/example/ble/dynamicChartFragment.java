@@ -60,15 +60,9 @@ public class dynamicChartFragment extends Fragment {
     private List<Entry> entries1 = new ArrayList<>();
     private List<Entry> entries2 = new ArrayList<>();
     private List<String> labels = new ArrayList<>();
-
     private int mXValue = 0;
-
-
-
     float yValue1,yValue2;
     float suml,sumr;
-
-
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -83,8 +77,6 @@ public class dynamicChartFragment extends Fragment {
         Log.e("lifecycle","oncreate");
         mChart = rootview.findViewById(R.id.dline_chart);
         System.out.println(mChart);
-
-
         setupChart();
         //setup();
         return rootview;
@@ -95,7 +87,6 @@ public class dynamicChartFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
 
         System.out.println("onviewcreated");
         viewModel = new ViewModelProvider(requireActivity()).get(ChartViewModel.class);
@@ -161,7 +152,9 @@ public class dynamicChartFragment extends Fragment {
 
                 XAxis xAxis = mChart.getXAxis();
                 xAxis.setValueFormatter(new XAxisValueFormatter(labels)); // Set custom X-axis labels
-                mChart.invalidate(); // Refresh chart
+                lineData.notifyDataChanged();
+                mChart.notifyDataSetChanged();
+                mChart.invalidate();
             }else{
                 System.out.println("mchart is nulls");
             }
@@ -170,7 +163,6 @@ public class dynamicChartFragment extends Fragment {
 
         }
         mXValue++;
-
     }
     private void setupChart() {
         mChart.getDescription().setEnabled(false);
@@ -188,8 +180,9 @@ public class dynamicChartFragment extends Fragment {
         mChart.getAxisRight().setDrawLabels(false);
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         YAxis yAxis = mChart.getAxisLeft();
-        yAxis.setAxisMaximum(1);
-        yAxis.setAxisMinimum(0);
+        yAxis.setAxisMaximum(1.2f);
+        yAxis.setAxisMinimum(-0.05f);
+//        xAxis.setAxisMinimum(-0.01f);
         System.out.println("setup");
         mChart.animateX(1500);
         mChart.invalidate();

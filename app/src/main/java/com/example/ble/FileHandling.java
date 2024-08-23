@@ -63,9 +63,7 @@ public class FileHandling {
             try{
 
                 FileWriter writer = new FileWriter(file,true);
-
                 writer.append(data).append("\n");
-
                 writer.close();
             }catch(IOException e){
                 e.printStackTrace();
@@ -74,7 +72,6 @@ public class FileHandling {
     }
 
     List<Entry>[] dailyusgae(String dirname){
-
             List<Entry> data1 = new ArrayList<>();
             List<Entry> data2 = new ArrayList<>();
             List<String> lable = new ArrayList<>();
@@ -88,7 +85,6 @@ public class FileHandling {
                         System.out.println(files);
                     }
                 });
-
                if(files != null){
                    for (File file : files) {
                        if (file.isFile() && file.getName().endsWith(".csv")) {

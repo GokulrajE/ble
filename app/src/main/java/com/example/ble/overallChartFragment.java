@@ -1,5 +1,6 @@
 package com.example.ble;
 
+import static androidx.core.content.ContextCompat.getSystemService;
 import static com.example.ble.S3Uploader.BUCKET_NAME;
 import static com.example.ble.S3Uploader.getExternalStorageDir;
 
@@ -22,6 +23,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Region;
@@ -71,9 +73,9 @@ public class overallChartFragment extends Fragment {
     Button refresh;
     TextView load;
     Handler mainhandler = new Handler(Looper.getMainLooper());
-    private static String ACCESS_KEY = "AKIA6GBMH3ERZIAA2ODG";
-    private static String SECRET_KEY = "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";
-
+    private static String ACCESS_KEY = "";
+    private static String SECRET_KEY = "";
+    String username;
     static final String BUCKET_NAME = "clinicianappbucket";
     static BasicAWSCredentials awsCreds = new BasicAWSCredentials(ACCESS_KEY, SECRET_KEY);
     static AmazonS3Client s3Client = new AmazonS3Client(awsCreds, Region.getRegion(Regions.EU_NORTH_1));
@@ -96,8 +98,9 @@ public class overallChartFragment extends Fragment {
         if(!initilized) {
             setup();
         }
-
+        username = MainActivity.username;
         initilized = true;
+        refresh.setBackgroundColor(Color.rgb(90, 143, 136));
         refresh.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -114,8 +117,6 @@ public class overallChartFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
-
         updatechart();
     }
 
@@ -135,9 +136,9 @@ public class overallChartFragment extends Fragment {
         Executor executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
             emojiEntries.clear();
-            emojiEntries = S3Uploader.readDataFromCSV( "gokul1/emojidata.csv");
+            emojiEntries = S3Uploader.readDataFromCSV( username+"/emojidata.csv");
             System.out.println(emojiEntries);
-            entries = fetchfromcsv("gokul1/",emojiEntries);
+            entries = fetchfromcsv(username+"/",emojiEntries);
             mainhandler.post(new Runnable() {
                 @Override
                 public void run() {
@@ -146,6 +147,7 @@ public class overallChartFragment extends Fragment {
             });
         });
     }
+
     private List<Entry>[] fetchfromcsv(String foldername,List<EmojiEntry> emojiEntries){
         List<String> keys = new ArrayList<>();
         List<Entry> entries1 = new ArrayList<>();
@@ -157,15 +159,15 @@ public class overallChartFragment extends Fragment {
             ListObjectsV2Request request = new ListObjectsV2Request().withBucketName(BUCKET_NAME).withPrefix(foldername);
             ListObjectsV2Result result;
             result = s3Client.listObjectsV2(request);
-            //System.out.println(result);
+//            System.out.println(result);
             if(!result.getObjectSummaries().isEmpty()) {
                 List<S3ObjectSummary> lobjects = result.getObjectSummaries();
-                // System.out.println(lobjects);
+                System.out.println(lobjects);
                 do {
 
                     for (S3ObjectSummary s3ObjectSummary : lobjects) {
                         String key = s3ObjectSummary.getKey();
-                        // System.out.println(key);
+//                         System.out.println(key);
                         keys.add(key);
                         S3Object s3Object = s3Client.getObject(BUCKET_NAME, key);
                         S3ObjectInputStream objectInputStream = s3Object.getObjectContent();
@@ -195,7 +197,7 @@ public class overallChartFragment extends Fragment {
                         String[] parts = key.split("/");
                         String dates[] = parts[1].split("-");
                         String dateafter = dates[0]+"/"+dates[1];
-                        //System.out.println(dateafter);
+//                        System.out.println(dateafter);
                         Entry entry1 = new Entry(mXValue,calcval1);
                         Entry entry2 = new Entry(mXValue,calcval2);
                         for(EmojiEntry emojiEntry:emojiEntries){
@@ -283,46 +285,49 @@ public class overallChartFragment extends Fragment {
 
         try{
             List<Entry>[] entries = dailyusgae(dir);
+            if(!entries[0].isEmpty()&&!entries[1].isEmpty()) {
+                LineDataSet dataSet1 = new LineDataSet(entries[0], "l-Arm");
+                LineDataSet dataSet2 = new LineDataSet(entries[1], "r-Arm");
+                dataSet1.setLineWidth(2f);
+                dataSet1.setColor(Color.rgb(135, 206, 235));
+                dataSet1.setCircleColor(Color.GREEN);
+                dataSet1.setCircleColorHole(Color.BLACK);
+                dataSet1.setDrawCircles(true);
+                dataSet1.setDrawValues(false);
+                dataSet2.setColor(Color.rgb(255, 165, 0));
+                dataSet2.setCircleColor(Color.GREEN);
+                dataSet2.setLineWidth(2f);
+                dataSet2.setDrawCircles(true);
+                dataSet2.setCircleColorHole(Color.BLACK);
+                dataSet2.setDrawValues(false);
+                dataSets1 = new ArrayList<>();
+                dataSets2 = new ArrayList<>();
+                dataSets1.add(dataSet1);
+                dataSets2.add(dataSet2);
+                dataSet1.setDrawIcons(true);
+                LineData lineData = new LineData();
+                lineData.addDataSet(dataSet1);
+                lineData.addDataSet(dataSet2);
+                try {
+                    if (mChart != null) {
+                        mChart.setData(lineData);
+                        XAxis xAxis = mChart.getXAxis();
+                        xAxis.setValueFormatter(new XAxisValueFormatter(labels1));// Set custom X-axis labels
+                        mChart.setVisibleXRangeMaximum(10);
+                        mChart.moveViewToX(0);
+                        mChart.setExtraOffsets(10, 10, 10, 10);
+                        mChart.invalidate(); // Refresh chart
+                    } else {
+                        System.out.println("mchart is nulls");
+                    }
+                } catch (NullPointerException e) {
+                    e.printStackTrace();
 
-            LineDataSet dataSet1 = new LineDataSet(entries[0], "l-Arm");
-            LineDataSet dataSet2 = new LineDataSet(entries[1], "r-Arm");
-            dataSet1.setLineWidth(2f);
-            dataSet1.setColor(Color.rgb(135,206,235));
-            dataSet1.setCircleColor(Color.GREEN);
-            dataSet1.setCircleColorHole(Color.BLACK);
-            dataSet1.setDrawCircles(true);
-            dataSet1.setDrawValues(false);
-            dataSet2.setColor(Color.rgb(255,165,0));
-            dataSet2.setCircleColor(Color.GREEN);
-            dataSet2.setLineWidth(2f);
-            dataSet2.setDrawCircles(true);
-            dataSet2.setCircleColorHole(Color.BLACK);
-            dataSet2.setDrawValues(false);
-            dataSets1= new ArrayList<>();
-            dataSets2  = new ArrayList<>();
-            dataSets1.add(dataSet1);
-            dataSets2.add(dataSet2);
-            dataSet1.setDrawIcons(true);
-            LineData lineData = new LineData();
-            lineData.addDataSet(dataSet1);
-            lineData.addDataSet(dataSet2);
-            try{
-                if(mChart!= null) {
-                    mChart.setData(lineData);
-                    XAxis xAxis = mChart.getXAxis();
-                    xAxis.setValueFormatter(new XAxisValueFormatter(labels1));// Set custom X-axis labels
-                    mChart.setVisibleXRangeMaximum(10);
-                    mChart.moveViewToX(0);
-                    mChart.setExtraOffsets(10,10,10,10);
-                    mChart.invalidate(); // Refresh chart
-                }else{
-                    System.out.println("mchart is nulls");
                 }
-            }catch (NullPointerException e){
-                e.printStackTrace();
-
             }
-
+            else{
+                Toast.makeText(getContext(),"No Data",Toast.LENGTH_SHORT).show();
+            }
         }catch (Exception e){
             e.printStackTrace();
         }

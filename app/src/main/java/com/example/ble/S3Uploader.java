@@ -38,6 +38,7 @@ import com.github.mikephil.charting.data.Entry;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -50,8 +51,10 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 public class S3Uploader {
-    private static String ACCESS_KEY = "AKIA6GBMH3ERZIAA2ODG";
-    private static String SECRET_KEY = "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";
+
+
+    private static String ACCESS_KEY = "";
+    private static String SECRET_KEY = "";
     static final String BUCKET_NAME = "clinicianappbucket";
     static BasicAWSCredentials awsCreds = new BasicAWSCredentials(ACCESS_KEY, SECRET_KEY);
     static AmazonS3Client s3Client = new AmazonS3Client(awsCreds, Region.getRegion(Regions.EU_NORTH_1));
@@ -64,6 +67,11 @@ public class S3Uploader {
         return file;
     }
 
+
+    static String username = MainActivity.username;
+    public void test(){
+        System.out.println(username);
+    }
     static File getLatestCsvFile() {
         // Specify the folder where CSV files are stored
         File folder = getExternalStorageDir("imuble");
@@ -93,6 +101,8 @@ public class S3Uploader {
         }
     }
 
+
+
     public static void upload(Context context,  File file) {
         TransferNetworkLossHandler transferNetworkLossHandler = TransferNetworkLossHandler.getInstance(context);
         TransferUtility transferUtility = TransferUtility.builder()
@@ -101,7 +111,7 @@ public class S3Uploader {
                 .s3Client(s3Client)
                 .build();
 
-        TransferObserver observer = transferUtility.upload(BUCKET_NAME, "gokul1/" + file.getName(), file);
+        TransferObserver observer = transferUtility.upload(BUCKET_NAME, username+"/" + file.getName(), file);
         observer.setTransferListener(new TransferListener() {
             @Override
             public void onStateChanged(int id, TransferState state) {
@@ -128,7 +138,7 @@ public class S3Uploader {
     public static List<String[]> fetchComments() throws IOException {
         List<String[]> comments = new ArrayList<>();
 
-        S3Object object = s3Client.getObject(new GetObjectRequest(BUCKET_NAME, "gokul1/Comment.csv"));
+        S3Object object = s3Client.getObject(new GetObjectRequest(BUCKET_NAME, username+"/Comment.csv"));
         S3ObjectInputStream inputStream = object.getObjectContent();
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
         String line;
@@ -205,10 +215,15 @@ public class S3Uploader {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+                return entries;
+            }
+            else{
+                System.out.println("invalid");
+                return entries;
             }
 
 
-        return entries;
+
     }
 
     public static void updateReadStatusAndUpload(List<String[]> comments, Context context) throws IOException {
