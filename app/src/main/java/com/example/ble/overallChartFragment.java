@@ -59,10 +59,9 @@ import java.util.concurrent.Executors;
 
 
 public class overallChartFragment extends Fragment {
-   static FileHandling fileHandling;
-   boolean initilized = false;
+    static FileHandling fileHandling;
+    boolean initilized = false;
     private LineChart mChart;
-
     public static String dir = "imuble";
     List<Entry>[] entries;
     List<String>labels= new ArrayList<>();
@@ -95,7 +94,7 @@ public class overallChartFragment extends Fragment {
         refresh = rootview.findViewById(R.id.refresh);
         load = rootview.findViewById(R.id.loading);
         System.out.println("oncreatview");
-        if(!initilized) {
+        if (!initilized) {
             setup();
         }
         username = MainActivity.username;
@@ -108,24 +107,17 @@ public class overallChartFragment extends Fragment {
                 refreshchart();
             }
         });
-
-
         return rootview;
-
     }
-
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         updatechart();
     }
-
     @Override
     public void onResume() {
         super.onResume();
-
     }
-
     @Override
     public void onPause() {
         super.onPause();
@@ -193,11 +185,9 @@ public class overallChartFragment extends Fragment {
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
-
                         String[] parts = key.split("/");
                         String dates[] = parts[1].split("-");
                         String dateafter = dates[0]+"/"+dates[1];
-//                        System.out.println(dateafter);
                         Entry entry1 = new Entry(mXValue,calcval1);
                         Entry entry2 = new Entry(mXValue,calcval2);
                         for(EmojiEntry emojiEntry:emojiEntries){
@@ -207,10 +197,8 @@ public class overallChartFragment extends Fragment {
                                 System.out.println(emoji);
                                 Drawable drawable = EmojiDrawableHelper.getEmojiDrawable(this,emoji);
                                 entry1.setIcon(drawable);
-
                             }
                             if(emojiEntry.getX()==entry2.getX()&&emojiEntry.getY()==entry2.getY()){
-
                                 String emoji = emojiEntry.getEmoji();
                                 System.out.println(emojiEntry.getX()+","+emojiEntry.getY()+emoji);
                                 Drawable drawable = EmojiDrawableHelper.getEmojiDrawable(this,emoji);
@@ -233,9 +221,7 @@ public class overallChartFragment extends Fragment {
         return new List[]{entries1,entries2};
 
     }
-
     public void updatechart( List<Entry>[] entries){
-
         try{
             LineDataSet dataSet1 = new LineDataSet(entries[0], "l-Arm");
             LineDataSet dataSet2 = new LineDataSet(entries[1], "r-Arm");
@@ -282,7 +268,6 @@ public class overallChartFragment extends Fragment {
         }
     }
     public void updatechart(){
-
         try{
             List<Entry>[] entries = dailyusgae(dir);
             if(!entries[0].isEmpty()&&!entries[1].isEmpty()) {
@@ -332,7 +317,6 @@ public class overallChartFragment extends Fragment {
             e.printStackTrace();
         }
     }
-
     List<Entry>[] dailyusgae(String dirname){
 
         List<Entry> data1 = new ArrayList<>();
@@ -403,7 +387,6 @@ public class overallChartFragment extends Fragment {
 
     }
     private void setup() {
-
         mChart.getDescription().setEnabled(false);
         mChart.setTouchEnabled(true);
         mChart.setDragEnabled(true);
@@ -412,7 +395,6 @@ public class overallChartFragment extends Fragment {
         mChart.setScaleXEnabled(true);
         mChart.setScaleYEnabled(true);
         mChart.setBackgroundColor(Color.rgb(255, 255, 255));
-
         XAxis xAxis = mChart.getXAxis();
         YAxis yAxisleft = mChart.getAxisLeft();
         yAxisleft.setAxisMinimum(0f);
@@ -426,7 +408,7 @@ public class overallChartFragment extends Fragment {
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         System.out.println("setup");
         mChart.animateX(1500);
-       mChart.invalidate();
+        mChart.invalidate();
     }
 
 

@@ -51,8 +51,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 public class S3Uploader {
-
-
     private static String ACCESS = "";
     private static String SECRET = "";
     static final String BUCKET_NAME = "clinicianappbucket";

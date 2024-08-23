@@ -118,6 +118,9 @@ public class MainActivity extends AppCompatActivity {
     Button Ten_interval;
     TextView text_left;
     TextView text_right;
+    boolean isconnected1 = false;
+    boolean isconnected2 = false;
+
     static String username;
     uploadCSVWorker uploadCSVWorker;
     BluetoothGattCharacteristic interval1;
@@ -135,7 +138,6 @@ public class MainActivity extends AppCompatActivity {
             startActivity(new Intent(MainActivity.this, GetNameActivity.class));
             finish();
         }
-
         setContentView(R.layout.activity_main);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (!Environment.isExternalStorageManager()) {//permission to get external file storage
@@ -190,18 +192,25 @@ public class MainActivity extends AppCompatActivity {
         bt.setOnClickListener(new View.OnClickListener() {//connect button
             @Override
             public void onClick(View view) {
-                connectToDevice1();
-                connectToDevice2();
+                if(isconnected1||isconnected2){
+                    disconnect();
+                    bt.setText("connect");
+                    bt.setBackgroundColor(Color.rgb(112, 185, 194));
+                }
+                else {
+                    connectToDevice1();
+                    connectToDevice2();
+                }
             }
         });
         five_interval.setOnClickListener(new View.OnClickListener() {// 5 sec interval button
             @Override
-            public void onClick(View view) {
+            public void onClick(View view){
                 Ten_interval.setBackgroundColor(Color.rgb(90, 143, 136));
                 int interval = 5;
                 intervalset1 = true;
                 intervalset2 = true;
-                send_interval(interval);
+                send_interval(interval,five_interval );
             }
         });
         Ten_interval.setOnClickListener(new View.OnClickListener() {// 10 sec interval button
@@ -211,7 +220,7 @@ public class MainActivity extends AppCompatActivity {
                 intervalset1 = true;
                 intervalset2 = true;
                 int interval = 10;
-                send_interval(interval);
+                send_interval(interval,Ten_interval);
             }
         });
         scheduleCsvUpload(); // shedule the backgroud process to upload the last updated csv file to cloud
@@ -241,14 +250,11 @@ public class MainActivity extends AppCompatActivity {
 //
 //            }
 //        });
-
         EmojiCompat.Config config = new BundledEmojiCompatConfig(this);
         EmojiCompat.init(config);
-
 //        fileHandling.writetoexternalfile_aws(dir,"aws.csv");
     }
-
-    public void send_interval(int interval) { // to set interval at run time
+    public void send_interval(int interval,Button Button_interval) { // to set interval at run time
         if (intervalset1) {
             if (interval1 != null) {
                 byte[] intervalBytes = ByteBuffer.allocate(Integer.BYTES).order(ByteOrder.LITTLE_ENDIAN).putInt(interval).array();
@@ -257,6 +263,7 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
                 bluetoothGatt1.writeCharacteristic(interval1);
+                Button_interval.setBackgroundColor(Color.rgb(75,176,80));
                 intervalset1 = false;
             } else {
                 System.out.println("null1");
@@ -354,7 +361,7 @@ public class MainActivity extends AppCompatActivity {
         File file = new File(getFilesDir(), filename);
         return file.exists();
     }
-     String getname() {// to get username which is stored in internal storage
+    String getname() {// to get username which is stored in internal storage
         String filename = "username.txt";
         try {
             FileInputStream fis = openFileInput(filename);
@@ -451,11 +458,14 @@ public class MainActivity extends AppCompatActivity {
                 if (ActivityCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                     return;
                 }
+                isconnected1 = true;
                 show("connected");
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         text_left.setTextColor(Color.rgb(76,175,80));
+                        bt.setText("Disconnect");
+                        bt.setBackgroundColor(Color.RED);
                     }
                 });
                 gatt.discoverServices();
@@ -465,7 +475,13 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+
                         text_left.setTextColor(Color.RED);
+                        if(isconnected1) {
+                            isconnected1 = false;
+                            bt.setText("connect");
+                            bt.setBackgroundColor(Color.rgb(112, 185, 194));
+                        }
                     }
                 });
                 show("disconnected");
@@ -502,7 +518,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onCharacteristicChanged(@NonNull BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] value) {
             super.onCharacteristicChanged(gatt, characteristic, value);
-                if(value.length==12){
+            if(value.length==12){
                 byte[] epoch = Arrays.copyOfRange(value,0,8);
                 byte[] floatValueBytes = Arrays.copyOfRange(value,8,12);
                 ByteBuffer epochBuffer = ByteBuffer.wrap(epoch).order(ByteOrder.LITTLE_ENDIAN);
@@ -510,21 +526,21 @@ public class MainActivity extends AppCompatActivity {
                 float floatValue = ByteBuffer.wrap(floatValueBytes).order(ByteOrder.LITTLE_ENDIAN).getFloat();
                 long milli = epochValue;
                 long time = System.currentTimeMillis();
-                    ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES).order(ByteOrder.LITTLE_ENDIAN);
-                    buffer.putLong(time);
-                    byte[] dataToSend = buffer.array();
-                    stringCharacteristic1.setValue(dataToSend);
+                ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES).order(ByteOrder.LITTLE_ENDIAN);
+                buffer.putLong(time);
+                byte[] dataToSend = buffer.array();
+                stringCharacteristic1.setValue(dataToSend);
                 if (ActivityCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                     return;
                 }
                 gatt.writeCharacteristic(stringCharacteristic1);
-                    runOnUiThread(new Runnable() {
-                        //update the received data to chart
-                        @Override
-                        public void run() {
-                            oncharacteristicchanged(gatt, floatValue,milli);
-                        }
-                    });
+                runOnUiThread(new Runnable() {
+                    //update the received data to chart
+                    @Override
+                    public void run() {
+                        oncharacteristicchanged(gatt, floatValue,milli);
+                    }
+                });
             }
             if(value.length == 1){
                 byte[] ackData = characteristic.getValue();
@@ -605,6 +621,9 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         text_right.setTextColor(Color.rgb(76,175,80));
+                        isconnected2  = true;
+                        bt.setBackgroundColor(Color.RED);
+                        bt.setText("Disconnect");
                     }
                 });
 
@@ -617,6 +636,11 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         text_right.setTextColor(Color.RED);
+                        if (isconnected2 ) {
+                            isconnected2 = false;
+                            bt.setText("connect");
+                            bt.setBackgroundColor(Color.rgb(112, 185, 194));
+                        }
                     }
                 });
 
@@ -626,7 +650,6 @@ public class MainActivity extends AppCompatActivity {
 
             }
         }
-
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             super.onServicesDiscovered(gatt, status);
@@ -660,7 +683,7 @@ public class MainActivity extends AppCompatActivity {
                 ByteBuffer epochBuffer = ByteBuffer.wrap(epoch).order(ByteOrder.LITTLE_ENDIAN);
                 long epochValue = epochBuffer.getLong();
                 float floatValue = ByteBuffer.wrap(floatValueBytes).order(ByteOrder.LITTLE_ENDIAN).getFloat();
-               long milli = epochValue;
+                long milli = epochValue;
                 long time = System.currentTimeMillis();
                 ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES).order(ByteOrder.LITTLE_ENDIAN);
                 buffer.putLong(time);
@@ -708,8 +731,6 @@ public class MainActivity extends AppCompatActivity {
                     Log.i(TAG, "Interval characteristic written successfully.");
                     runOnUiThread(() -> Toast.makeText(getApplicationContext(), "Interval written successfully", Toast.LENGTH_SHORT).show());
                 }
-
-
             }
             else {
                 Log.e("Characteristic Write", "Failed with status: " + status);
@@ -723,10 +744,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.e(TAG, "Descriptor write failed with status: " + status);
             }
         }
-
-
     };
-
     private void show(String text){
         runOnUiThread(new Runnable() {
             @Override
@@ -734,17 +752,13 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(getApplicationContext(),text,Toast.LENGTH_LONG).show();
             }
         });
-
-
     }
-
     private void bluetoothenable() {                                    //bluetooth connection method
         if (my_bluetooth != null && !my_bluetooth.isEnabled()) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             bluetoothLauncher.launch(enableBtIntent);
         }
     }
-
     private final ActivityResultLauncher<Intent> bluetoothLauncher = registerForActivityResult(        //intent for enable bluetooth if it is not enabled
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
@@ -773,7 +787,6 @@ public class MainActivity extends AppCompatActivity {
             Log.e("BLE", "BluetoothLeScanner is null");
         }
     }
-
     private ScanCallback scanCallback = new ScanCallback() {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
@@ -798,7 +811,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
-
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -813,28 +825,31 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-   public void disconnect(){
-       if (bluetoothLeScanner != null) {
-           if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
-               return;
-           }
-           bluetoothLeScanner.stopScan(scanCallback);
-       }
+    public void disconnect(){
+        if (bluetoothLeScanner != null) {
+            if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+                return;
+            }
+            bluetoothLeScanner.stopScan(scanCallback);
+        }
 
-       if(bluetoothGatt1 != null){
-           bluetoothGatt1.close();
+        if(bluetoothGatt1 != null){
+            bluetoothGatt1.disconnect();
+            bluetoothGatt1.close();
+            bluetoothGatt1 = null;
+            isconnected1 = false;
+            text_right.setTextColor(Color.RED);
 
-           bluetoothGatt1.disconnect();
+        }
+        if(bluetoothGatt2 != null){
+            bluetoothGatt2.disconnect();
+            bluetoothGatt2.close();
+            bluetoothGatt2 = null;
+            isconnected2 = false;
+            text_left.setTextColor(Color.RED);
+        }
 
-       }
-       if(bluetoothGatt2 != null){
-           bluetoothGatt2.close();
-
-           bluetoothGatt2.disconnect();
-
-       }
-
-   }
+    }
     @Override
     protected void onPause() {
         super.onPause();

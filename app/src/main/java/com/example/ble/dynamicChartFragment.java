@@ -92,9 +92,9 @@ public class dynamicChartFragment extends Fragment {
         viewModel = new ViewModelProvider(requireActivity()).get(ChartViewModel.class);
         viewModel.getData1().observe(getViewLifecycleOwner(), newData1 -> {
 
-          yValue1 = newData1.getY();
+            yValue1 = newData1.getY();
 
-          addDataPointToGraph(newData1.getX(),yValue1,1);
+            addDataPointToGraph(newData1.getX(),yValue1,1);
         });
         viewModel.getData2().observe(getViewLifecycleOwner(), newData2 -> {
 
