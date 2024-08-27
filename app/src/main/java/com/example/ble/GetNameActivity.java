@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -24,7 +25,6 @@ public class GetNameActivity extends AppCompatActivity {
             public void onClick(View view) {
                 EditText editText = findViewById(R.id.editext);
                 String username = editText.getText().toString();
-
                 saveusername(username);
                 startActivity(new Intent(GetNameActivity.this, MainActivity.class));
                 finish();
@@ -33,6 +33,7 @@ public class GetNameActivity extends AppCompatActivity {
     }
     private void saveusername(String name){
         String filname = "username.txt";
+
         try{
             FileOutputStream fos = openFileOutput(filname, Context.MODE_PRIVATE);
             fos.write(name.getBytes());

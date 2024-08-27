@@ -52,7 +52,7 @@ import java.util.concurrent.Executors;
 
 public class S3Uploader {
     private static String ACCESS = "";
-    private static String SECRET = "";
+    private static String SECRET= "";
     static final String BUCKET_NAME = "clinicianappbucket";
     static BasicAWSCredentials awsCreds = new BasicAWSCredentials(ACCESS, SECRET);
     static AmazonS3Client s3Client = new AmazonS3Client(awsCreds, Region.getRegion(Regions.EU_NORTH_1));

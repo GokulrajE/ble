@@ -7,9 +7,11 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.emoji.bundled.BundledEmojiCompatConfig;
 import androidx.emoji.text.EmojiCompat;
 import androidx.fragment.app.Fragment;
@@ -20,7 +22,9 @@ import androidx.work.Constraints;
 import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
-
+import android.Manifest;
+import android.bluetooth.BluetoothClass;
+import android.content.pm.PackageManager;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -36,6 +40,7 @@ import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -53,39 +58,26 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.anychart.AnyChartView;
-import com.anychart.chart.common.dataentry.DataEntry;
-import com.anychart.chart.common.dataentry.ValueDataEntry;
-import com.anychart.charts.Cartesian;
-import com.anychart.core.cartesian.series.Line;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Deque;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+
 import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
@@ -94,13 +86,17 @@ public class MainActivity extends AppCompatActivity {
     private List<BluetoothDevice> bleDevices;
     data data3;
     data data4;
+    ArrayList<String> bleAddress;
+    ArrayList<String> blename;
     private BluetoothAdapter my_bluetooth;
     private BluetoothGatt bluetoothGatt1;
     private BluetoothGatt bluetoothGatt2;
-    private String deviceAddress1 = "A9:42:49:0E:65:80";
+    private String deviceAddress1 = "60:2B:A8:76:25:47";
+//    private String deviceAddress1;
     boolean intervalset2;
     boolean intervalset1;
-    private String deviceAddress2 = "8C:40:AD:58:04:E7";
+   private String deviceAddress2 = "47:75:AC:4E:78:36";
+//    private String deviceAddress2;
     private static final String PREF_LAST_SEEN = "last_seen";
     private SharedPreferences sharedPreferences;
     FileHandling fileHandling;
@@ -118,9 +114,10 @@ public class MainActivity extends AppCompatActivity {
     Button Ten_interval;
     TextView text_left;
     TextView text_right;
+    public String L_device ="l-nrf";
+    public String R_device ="r-nrf";
     boolean isconnected1 = false;
     boolean isconnected2 = false;
-
     static String username;
     uploadCSVWorker uploadCSVWorker;
     BluetoothGattCharacteristic interval1;
@@ -144,6 +141,7 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
                 startActivity(intent);
             }
+
         }
         viewModel = new ViewModelProvider(this).get(ChartViewModel.class); // To update live data in chart
         viewpager = findViewById(R.id.viewpager);
@@ -154,11 +152,11 @@ public class MainActivity extends AppCompatActivity {
         viewpager.setAdapter(pagerAdapter);
         sharedPreferences = getSharedPreferences("mypref", Context.MODE_PRIVATE);// To update last seen
         bleDevices = new ArrayList<>();
+        bleAddress = new ArrayList<>();
         TextView name = findViewById(R.id.textname);
         TextView date = findViewById(R.id.datetext);
         TextView days = findViewById(R.id.days);
         username = getname();
-
         String c_date = currentDate();
         if (date != null) {
             date.setText("Date:" + c_date);
@@ -189,9 +187,15 @@ public class MainActivity extends AppCompatActivity {
         bt.setBackgroundColor(Color.rgb(112, 185, 194));
         five_interval.setBackgroundColor(Color.rgb(90, 143, 136));
         Ten_interval.setBackgroundColor(Color.rgb(90, 143, 136));
-        bt.setOnClickListener(new View.OnClickListener() {//connect button
+        bleDevices = new ArrayList<>();
+        arrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
+
+        // Check and request location permission if needed
+        bt.setOnClickListener(new View.OnClickListener() {
+            //connect button
             @Override
             public void onClick(View view) {
+
                 if(isconnected1||isconnected2){
                     disconnect();
                     bt.setText("connect");
@@ -201,9 +205,15 @@ public class MainActivity extends AppCompatActivity {
                     connectToDevice1();
                     connectToDevice2();
                 }
-            }
+                }
         });
-        five_interval.setOnClickListener(new View.OnClickListener() {// 5 sec interval button
+//        if (checkLocationPermission()) {
+//            startBleScan();
+//        } else {
+//            requestLocationPermission();
+//        }
+        five_interval.setOnClickListener(new View.OnClickListener() {
+            // 5 sec interval button
             @Override
             public void onClick(View view){
                 Ten_interval.setBackgroundColor(Color.rgb(90, 143, 136));
@@ -213,7 +223,8 @@ public class MainActivity extends AppCompatActivity {
                 send_interval(interval,five_interval );
             }
         });
-        Ten_interval.setOnClickListener(new View.OnClickListener() {// 10 sec interval button
+        Ten_interval.setOnClickListener(new View.OnClickListener() {
+            // 10 sec interval button
             @Override
             public void onClick(View view) {
                 five_interval.setBackgroundColor(Color.rgb(90, 143, 136));
@@ -223,6 +234,7 @@ public class MainActivity extends AppCompatActivity {
                 send_interval(interval,Ten_interval);
             }
         });
+
         scheduleCsvUpload(); // shedule the backgroud process to upload the last updated csv file to cloud
 //        CardView comment = findViewById(R.id.commentcard);
         TextView load = findViewById(R.id.load);
@@ -254,7 +266,65 @@ public class MainActivity extends AppCompatActivity {
         EmojiCompat.init(config);
 //        fileHandling.writetoexternalfile_aws(dir,"aws.csv");
     }
-    public void send_interval(int interval,Button Button_interval) { // to set interval at run time
+    public void pair(){
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    REQUEST_LOCATION_PERMISSION);
+            requestLocationPermission();
+        } else {
+            // Permission granted, start BLE scanning
+            startBleScan();
+        }
+        // Set up AlertDialog to show BLE device names
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("BLE Devices");
+        builder.setAdapter(arrayAdapter, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int position) {
+                // Handle item click if needed
+                BluetoothDevice selectedDevice = bleDevices.get(position);
+                System.out.println(selectedDevice.getAddress());
+                System.out.println(bleAddress);
+                System.out.println(position);
+                System.out.println(bleAddress.get(position));
+                if(blename.get(position).equals("l-nrf")||blename.get(position).equals("r-nrf")) {
+                    saveaddress(blename.get(position), bleAddress.get(position));
+                }
+                else{
+                    show("Selet the valid deivce Name");
+                }
+//                connectToDevice(selectedDevice);
+            }
+        });
+
+
+        builder.show();
+    }
+    boolean checkAddress(String name){
+        String filname = name+".txt";
+        File  file = new File(getFilesDir(),filname);
+        return file.exists();
+    }
+    private void saveaddress(String name,String address){
+        String filname = name+".txt";
+        File  file = new File(getFilesDir(),filname);
+        if(file.exists()){
+            file.delete();
+        }
+        try{
+            FileOutputStream fos = openFileOutput(filname, Context.MODE_PRIVATE);
+            fos.write(address.getBytes());
+            fos.close();
+            System.out.println("Address saved Successfully");
+        }
+        catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+    public void send_interval(int interval,Button Button_interval) {
+        // to set interval at run time
         if (intervalset1) {
             if (interval1 != null) {
                 byte[] intervalBytes = ByteBuffer.allocate(Integer.BYTES).order(ByteOrder.LITTLE_ENDIAN).putInt(interval).array();
@@ -262,7 +332,7 @@ public class MainActivity extends AppCompatActivity {
                 if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                     return;
                 }
-                bluetoothGatt1.writeCharacteristic(interval1);
+                bluetoothGatt1.writeCharacteristic(interval1);// write data to ble
                 Button_interval.setBackgroundColor(Color.rgb(75,176,80));
                 intervalset1 = false;
             } else {
@@ -276,6 +346,7 @@ public class MainActivity extends AppCompatActivity {
                 if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                     return;
                 }
+                //write data to ble
                 bluetoothGatt2.writeCharacteristic(interval2);
                 intervalset2 = false;
             }else{
@@ -287,13 +358,11 @@ public class MainActivity extends AppCompatActivity {
         Constraints constraints = new Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build();
-
         OneTimeWorkRequest uploadRequest =
                 new OneTimeWorkRequest.Builder(uploadCSVWorker.class)
                         .setConstraints(constraints)
                         .setInitialDelay(calculateInitialDelay(), TimeUnit.MILLISECONDS)
                         .build();
-
         WorkManager.getInstance(getApplicationContext()).enqueue(uploadRequest);
     }
 
@@ -305,10 +374,8 @@ public class MainActivity extends AppCompatActivity {
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
-
         long currentTime = System.currentTimeMillis();
         long scheduledTime = calendar.getTimeInMillis();
-
         if (currentTime > scheduledTime) {
             // If current time is already past 12 am, schedule for the next day
             calendar.add(Calendar.DAY_OF_MONTH, 1);
@@ -317,7 +384,7 @@ public class MainActivity extends AppCompatActivity {
 
         return scheduledTime - currentTime;
     }
-
+    // to update the last seen data from sharedpreference
     private void updatelastseen() {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putLong(PREF_LAST_SEEN, System.currentTimeMillis());
@@ -361,7 +428,25 @@ public class MainActivity extends AppCompatActivity {
         File file = new File(getFilesDir(), filename);
         return file.exists();
     }
-    String getname() {// to get username which is stored in internal storage
+    String getAddress(String name){
+        String filename = name+".txt";
+        File file = new File(getFilesDir(), filename);
+        if(file.exists()) {
+            try {
+                FileInputStream fis = openFileInput(filename);
+                InputStreamReader isr = new InputStreamReader(fis);
+                BufferedReader br = new BufferedReader(isr);
+                return br.readLine();
+            } catch (IOException e) {
+                e.printStackTrace();
+                return " ";
+            }
+        }else{
+            return "";
+        }
+    }
+    String getname() {
+        // to get username which is stored in internal storage
         String filename = "username.txt";
         try {
             FileInputStream fis = openFileInput(filename);
@@ -380,7 +465,8 @@ public class MainActivity extends AppCompatActivity {
         return dateFormat.format(new Date());
     }
 
-    private void writedata(int number, float value, String time) {//To store received data in csv file
+    private void writedata(int number, float value, String time) {
+        //To store received data in csv file
         float devicel = 0;
         float devicer = 0;
 
@@ -445,7 +531,6 @@ public class MainActivity extends AppCompatActivity {
         bluetoothGatt1 = device.connectGatt(this, false, mygattCallback1);
         // connect to device
     }
-
     private final BluetoothGattCallback mygattCallback1 = new BluetoothGattCallback() {
         //once device get connected to app, callback fuctions will call for each state
         @Override
@@ -602,7 +687,6 @@ public class MainActivity extends AppCompatActivity {
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
-
         bluetoothGatt2 = device.connectGatt(this, false, mygattCallback2);
 
     }
@@ -803,7 +887,9 @@ public class MainActivity extends AppCompatActivity {
                 {
                     arrayAdapter.add(newDevice.getName());
                     arrayAdapter.notifyDataSetChanged();
-                    Log.e("BLE", "device found" + newDevice.getName());
+                    blename.add(newDevice.getName());
+                    bleAddress.add(newDevice.getAddress());
+                    Log.e("BLE", "device found" + newDevice.getAddress());
                 }
                 else{
                     Log.e("ble","device found with null name");
@@ -811,6 +897,25 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
+    private boolean checkLocationPermission() {
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void requestLocationPermission() {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Permission Needed")
+                    .setMessage("This permission is needed to access location services for BLE scanning.")
+                    .setPositiveButton("OK", (dialog, which) -> ActivityCompat.requestPermissions(this,
+                            new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION))
+                    .create()
+                    .show();
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION);
+        }
+    }
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
