@@ -11,9 +11,7 @@
         android:id="@+id/chart"
         android:layout_marginTop="10dp"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-
-
+        android:layout_height="wrap_content"
         android:background="@drawable/round">
 
         <TextView
@@ -23,7 +21,6 @@
             android:text="TODAY ARM READING"
             android:layout_marginTop="5dp"
             android:layout_marginLeft="8dp"
-
             android:drawablePadding="10dp"
             android:textSize="20sp"
             android:textColor="#474A4A"

@@ -58,12 +58,16 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FilterReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
@@ -83,27 +87,32 @@ import java.util.concurrent.TimeUnit;
 public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_LOCATION_PERMISSION = 1;
     private BluetoothLeScanner bluetoothLeScanner;
+    private static final int PERMISSIONS_REQUEST_CODE = 100;
     private List<BluetoothDevice> bleDevices;
     data data3;
     data data4;
+    boolean ispause = false;
     ArrayList<String> bleAddress;
     ArrayList<String> blename;
     private BluetoothAdapter my_bluetooth;
     private BluetoothGatt bluetoothGatt1;
     private BluetoothGatt bluetoothGatt2;
-    private String deviceAddress1 = "60:2B:A8:76:25:47";
+    private String deviceAddress1 = "A9:42:49:0E:65:80";//left arm device
 //    private String deviceAddress1;
     boolean intervalset2;
     boolean intervalset1;
-   private String deviceAddress2 = "47:75:AC:4E:78:36";
+   private String deviceAddress2 = "47:75:AC:4E:78:36";// right arm deive
 //    private String deviceAddress2;
     private static final String PREF_LAST_SEEN = "last_seen";
     private SharedPreferences sharedPreferences;
+    private DataStorage dataStorage;
     FileHandling fileHandling;
     private ViewPager2 viewpager;
     private ChartPagerAdapter pagerAdapter;
-    public String dir = "imuble";
-    private String filename = currentDate() + ".csv";
+    public String dir = "Arm_use";
+    public  String foldername = currentDate();
+    public static String filename_left = "left_Arm.csv";
+    public static String filename_right = "right_Arm.csv";
     ArrayAdapter arrayAdapter;
     TextView sumleft;
     TextView sumright;
@@ -119,6 +128,7 @@ public class MainActivity extends AppCompatActivity {
     boolean isconnected1 = false;
     boolean isconnected2 = false;
     static String username;
+    private List<DataStorage> storedData = new ArrayList<>();
     uploadCSVWorker uploadCSVWorker;
     BluetoothGattCharacteristic interval1;
     BluetoothGattCharacteristic interval2;
@@ -126,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
     BluetoothGattCharacteristic stringCharacteristic2;
     BluetoothGattCharacteristic characteristic1;
     BluetoothGattCharacteristic stringCharacteristic1;
-
+    CardView interval;
     @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -141,7 +151,9 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
                 startActivity(intent);
             }
-
+        }
+        if (!hasPermissions()) {
+            requestPermissions();
         }
         viewModel = new ViewModelProvider(this).get(ChartViewModel.class); // To update live data in chart
         viewpager = findViewById(R.id.viewpager);
@@ -153,6 +165,7 @@ public class MainActivity extends AppCompatActivity {
         sharedPreferences = getSharedPreferences("mypref", Context.MODE_PRIVATE);// To update last seen
         bleDevices = new ArrayList<>();
         bleAddress = new ArrayList<>();
+        interval = findViewById(R.id.intervals);
         TextView name = findViewById(R.id.textname);
         TextView date = findViewById(R.id.datetext);
         TextView days = findViewById(R.id.days);
@@ -173,8 +186,8 @@ public class MainActivity extends AppCompatActivity {
         } else {
             days.setText("Days of use:" + size);
         }
-        sumleft = findViewById(R.id.left);
-        sumright = findViewById(R.id.right);
+//        sumleft = findViewById(R.id.left);
+//        sumright = findViewById(R.id.right);
         lastupdate = findViewById(R.id.lastu);
         bt = findViewById(R.id.show);
         five_interval = findViewById(R.id.Five_interval);
@@ -189,7 +202,8 @@ public class MainActivity extends AppCompatActivity {
         Ten_interval.setBackgroundColor(Color.rgb(90, 143, 136));
         bleDevices = new ArrayList<>();
         arrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
-
+        five_interval.setVisibility(View.GONE);
+        Ten_interval.setVisibility(View.GONE);
         // Check and request location permission if needed
         bt.setOnClickListener(new View.OnClickListener() {
             //connect button
@@ -202,8 +216,8 @@ public class MainActivity extends AppCompatActivity {
                     bt.setBackgroundColor(Color.rgb(112, 185, 194));
                 }
                 else {
-                    connectToDevice1();
-                    connectToDevice2();
+                    connectToDevice1();// left arm
+                    connectToDevice2();// right arm
                 }
                 }
         });
@@ -234,7 +248,13 @@ public class MainActivity extends AppCompatActivity {
                 send_interval(interval,Ten_interval);
             }
         });
-
+        interval.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                five_interval.setVisibility(View.VISIBLE);
+                Ten_interval.setVisibility(View.VISIBLE);
+            }
+        });
         scheduleCsvUpload(); // shedule the backgroud process to upload the last updated csv file to cloud
 //        CardView comment = findViewById(R.id.commentcard);
         TextView load = findViewById(R.id.load);
@@ -298,8 +318,6 @@ public class MainActivity extends AppCompatActivity {
 //                connectToDevice(selectedDevice);
             }
         });
-
-
         builder.show();
     }
     boolean checkAddress(String name){
@@ -365,8 +383,6 @@ public class MainActivity extends AppCompatActivity {
                         .build();
         WorkManager.getInstance(getApplicationContext()).enqueue(uploadRequest);
     }
-
-
     private long calculateInitialDelay() {
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(System.currentTimeMillis());
@@ -381,7 +397,6 @@ public class MainActivity extends AppCompatActivity {
             calendar.add(Calendar.DAY_OF_MONTH, 1);
             scheduledTime = calendar.getTimeInMillis();
         }
-
         return scheduledTime - currentTime;
     }
     // to update the last seen data from sharedpreference
@@ -421,7 +436,6 @@ public class MainActivity extends AppCompatActivity {
         } else {
             return "just now";
         }
-
     }
     private boolean username() {
         String filename = "username.txt";
@@ -464,25 +478,26 @@ public class MainActivity extends AppCompatActivity {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
         return dateFormat.format(new Date());
     }
-
-    private void writedata(int number, float value, String time) {
+    private void writedata(int number, float value, long time) {
         //To store received data in csv file
         float devicel = 0;
         float devicer = 0;
-
+        String data;
         if (number == 1) {
             devicel = value;
+            data = time + "," + devicel;
+            fileHandling.writetoexternalfile(dir, foldername,filename_left, data);
         }
         if (number == 2) {
             devicer = value;
+            data = time + "," + devicer;
+            fileHandling.writetoexternalfile(dir, foldername,filename_right, data);
         }
-
-        String data;
-        data = time + "," + devicel + "," + devicer;
-        fileHandling.writetoexternalfile(dir, filename, data);
-
+////        String data;
+//        data = time + "," + devicel + "," + devicer;
+//        fileHandling.writetoexternalfile(dir, foldername,, data);
     }
-    String convertStringtoMinutes(String datestr) {
+    static String convertStringtoMinutes(String datestr) {
         try {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault());
             Date date = sdf.parse(datestr);
@@ -499,13 +514,12 @@ public class MainActivity extends AppCompatActivity {
         }
         return " ";
     }
-
     private void oncharacteristicchanged(BluetoothGatt gatt, float value, long millis ) {
         String dateStr = getCurrentTime(millis);
         String time = convertStringtoMinutes(dateStr);
         System.out.println(time);
         int devicenumber = (gatt == bluetoothGatt1) ? 1 : 2;
-        writedata(devicenumber,value,dateStr);
+        writedata(devicenumber,value,millis);
         try {
             if (devicenumber == 1) {
                 data3 = new data(time, value);
@@ -626,7 +640,13 @@ public class MainActivity extends AppCompatActivity {
                         oncharacteristicchanged(gatt, floatValue,milli);
                     }
                 });
+                if (ispause) {
+                    // Store data when the app is paused
+                    int devicenumber = (gatt == bluetoothGatt1) ? 1 : 2;
+                    storedData.add(new DataStorage(convertStringtoMinutes(getCurrentTime(epochValue)), floatValue,devicenumber));
+                }
             }
+
             if(value.length == 1){
                 byte[] ackData = characteristic.getValue();
                 if (ackData != null && ackData.length > 0) {
@@ -678,8 +698,6 @@ public class MainActivity extends AppCompatActivity {
                 Log.e(TAG, "Descriptor write failed with status: " + status);
             }
         }
-
-
     };
     // device -2
     private void connectToDevice2() {
@@ -688,9 +706,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         bluetoothGatt2 = device.connectGatt(this, false, mygattCallback2);
-
     }
-
     private final BluetoothGattCallback mygattCallback2 = new BluetoothGattCallback() {//once device get connected to app, callback fuctions will call for each state
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
@@ -727,11 +743,8 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                 });
-
                 show("disconnected");
-
                 gatt.close();
-
             }
         }
         @Override
@@ -781,9 +794,14 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        oncharacteristicchanged(gatt, floatValue,milli);
+                        oncharacteristicchanged(gatt,floatValue,milli);
                     }
                 });
+                if (ispause) {
+                    // Store data when the app is paused
+                    int devicenumber = (gatt == bluetoothGatt1) ? 1 : 2;
+                    storedData.add(new DataStorage(convertStringtoMinutes(getCurrentTime(epochValue)), floatValue,devicenumber));
+                }
             }
             if(value.length == 1){
                 System.out.println("received");
@@ -848,12 +866,10 @@ public class MainActivity extends AppCompatActivity {
             result -> {
                 if(result.getResultCode() == Activity.RESULT_OK){
                     Toast.makeText(getApplicationContext(),"bluetooth enabled",Toast.LENGTH_LONG).show();
-
                 }else{
                     Toast.makeText(getApplicationContext(),"bluetooth not enabled",Toast.LENGTH_LONG).show();
                     finish();
                 }
-
             }
     );
     private void startBleScan() {
@@ -897,9 +913,42 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
-    private boolean checkLocationPermission() {
-        return ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED;
+
+    private boolean hasPermissions() {
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED;
+    }
+    private void requestPermissions() {
+        ActivityCompat.requestPermissions(this,
+                new String[]{
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.BLUETOOTH_CONNECT,
+                        Manifest.permission.BLUETOOTH_SCAN
+                },
+                PERMISSIONS_REQUEST_CODE
+        );
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == PERMISSIONS_REQUEST_CODE) {
+            boolean allPermissionsGranted = true;
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    allPermissionsGranted = false;
+                    break;
+                }
+            }
+            if (allPermissionsGranted) {
+                // Permissions granted, proceed with your functionality
+                Toast.makeText(this, "Permission Granted", Toast.LENGTH_SHORT).show();
+            } else {
+                // Permissions not granted, handle the case
+                Toast.makeText(this, "App requires permission please allow", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     private void requestLocationPermission() {
@@ -916,20 +965,20 @@ public class MainActivity extends AppCompatActivity {
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION);
         }
     }
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQUEST_LOCATION_PERMISSION) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Permission granted, start BLE scanning
-                Log.e("ble","Start scanning");
-                startBleScan();
-            } else {
-                // Permission denied, handle accordingly
-                Log.e("BLE", "Location permission denied");
-            }
-        }
-    }
+//    @Override
+//    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+//        if (requestCode == REQUEST_LOCATION_PERMISSION) {
+//            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                // Permission granted, start BLE scanning
+//                Log.e("ble","Start scanning");
+//                startBleScan();
+//            } else {
+//                // Permission denied, handle accordingly
+//                Log.e("BLE", "Location permission denied");
+//            }
+//        }
+//    }
     public void disconnect(){
         if (bluetoothLeScanner != null) {
             if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
@@ -953,12 +1002,36 @@ public class MainActivity extends AppCompatActivity {
             isconnected2 = false;
             text_left.setTextColor(Color.RED);
         }
-
     }
     @Override
     protected void onPause() {
         super.onPause();
+        ispause = true;
+//        System.out.println("on pause");
         updatelastseen();
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        ispause = false;
+
+        // Update the chart with stored data
+        if(!storedData.isEmpty()) {
+            for (DataStorage d : storedData) {
+                if (d.getDevice_no() == 1) {
+                    data3 = new data(d.getX(), d.getY());
+                    viewModel.setData1(data3);
+                } else {
+                    data4 = new data(d.getX(), d.getY());
+                    viewModel.setData2(data4);
+                }
+            }
+            // Clear stored data after updating the chart
+            storedData.clear();
+        }
+        else{
+            Log.e("resume","storedata is empty");
+        }
     }
 
     @Override

@@ -38,14 +38,17 @@ public class FileHandling {
         }
         return file;
     }
-    void writetoexternalfile(String dirname, String filename, String data){
+    void writetoexternalfile(String dirname, String foldername, String filname,String data){
         if(isExternalStorageWritable()){
             File dir = getExternalStorageDir(dirname);
-            File file = new File(dir,filename);
+
+            File folder = new File(dir,foldername);
+            if(!folder.exists()){
+                folder.mkdirs();
+            }
+            File file = new File(folder,filname);
             try{
-
                 FileWriter writer = new FileWriter(file,true);
-
                 writer.append(data).append("\n");
                 writer.close();
             }catch(IOException e){
@@ -61,7 +64,6 @@ public class FileHandling {
             final String SECRET_KEY = "";
             String data = ACCESS_KEY+","+SECRET_KEY;
             try{
-
                 FileWriter writer = new FileWriter(file,true);
                 writer.append(data).append("\n");
                 writer.close();
@@ -70,71 +72,66 @@ public class FileHandling {
             }
         }
     }
-    List<Entry>[] dailyusgae(String dirname){
+  void dailyusgae(String dirname){
         List<Entry> data1 = new ArrayList<>();
         List<Entry> data2 = new ArrayList<>();
         List<String> lable = new ArrayList<>();
         float mXValue=0;
         File dir = getExternalStorageDir(dirname);
-        if(dir.exists()&& dir.isDirectory()){
+        if(dir.exists()&& dir.isDirectory()) {
             File[] files = dir.listFiles();
-            mainhandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    System.out.println(files);
-                }
-            });
-            if(files != null){
-                for (File file : files) {
-                    if (file.isFile() && file.getName().endsWith(".csv")) {
-                        try {
-                            // Parse CSV file
-                            BufferedReader reader = new BufferedReader(new FileReader(file));
-                            String nextLine;
-                            double calcval1 =0;
-                            double calcval2 =0;
-
-                            double sumValue1 = 0;
-                            double sumValue2 = 0;
-                            while ((nextLine = reader.readLine()) != null) {
-                                // Assuming the CSV structure is: Date, Value1, Value2
-                                String[] parts = nextLine.split(",");
-                                sumValue1 += Double.parseDouble(parts[1]);
-                                sumValue2 += Double.parseDouble(parts[2]);
-                            }
-                            reader.close();
-
-                            // Extract date from filename
-
-                            String dateparts[] =  file.getName().split("\\.");
-                            String  date = dateparts[0];
-                            String dates[] = date.split("-");
-
-                            String dateafter = dates[0]+"/"+dates[1];
-                            System.out.println(dateafter);
-
-                            System.out.println(date);
-                            calcval1 = sumValue1/60;
-                            calcval2 = sumValue2/60;
-                            Entry entry1 = new Entry(mXValue, (float) calcval1);
-                            Entry entry2 = new Entry(mXValue, (float) calcval2);
-                            data1.add(entry1);
-                            data2.add(entry2);
-                            lable.add(dateafter);
-
-                        } catch (IOException | NumberFormatException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-
-            }
-            else{
-                System.out.println("files is null");
+            for(File file :files){
+                System.out.println(file.getName());
             }
         }
+//            if(files != null){
+//                for (File file : files) {
+//                    if (file.isFile() && file.getName().endsWith(".csv")) {
+//                        try {
+//                            // Parse CSV file
+//                            BufferedReader reader = new BufferedReader(new FileReader(file));
+//                            String nextLine;
+//                            double calcval1 =0;
+//                            double calcval2 =0;
+//                            double sumValue1 = 0;
+//                            double sumValue2 = 0;
+//                            while ((nextLine = reader.readLine()) != null) {
+//                                // Assuming the CSV structure is: Date, Value1, Value2
+//                                String[] parts = nextLine.split(",");
+//                                sumValue1 += Double.parseDouble(parts[1]);
+//                                sumValue2 += Double.parseDouble(parts[2]);
+//                            }
+//                            reader.close();
+//                            // Extract date from filename
+//                            String dateparts[] =  file.getName().split("\\.");
+//                            String  date = dateparts[0];
+//                            String dates[] = date.split("-");
+//
+//                            String dateafter = dates[0]+"/"+dates[1];
+//                            System.out.println(dateafter);
+//
+//                            System.out.println(date);
+//                            calcval1 = sumValue1/60;
+//                            calcval2 = sumValue2/60;
+//                            Entry entry1 = new Entry(mXValue, (float) calcval1);
+//                            Entry entry2 = new Entry(mXValue, (float) calcval2);
+//                            data1.add(entry1);
+//                            data2.add(entry2);
+//                            lable.add(dateafter);
+//
+//                        } catch (IOException | NumberFormatException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                }
+//
+//            }
+//            else{
+//                System.out.println("files is null");
+//            }
+//        }
 
-        return new List[]{data1, data2};
+//        return new List[]{data1, data2};
 
     }
     List<String>  labels(){

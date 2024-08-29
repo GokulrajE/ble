@@ -25,9 +25,9 @@ import java.util.Arrays;
 import java.util.UUID;
 
 public class BluetoothService extends Service {
-    private BluetoothAdapter my_bluetooth;
-    private BluetoothGatt bluetoothGatt1;
-    private BluetoothGatt bluetoothGatt2;
+    BluetoothAdapter my_bluetooth;
+    BluetoothGatt bluetoothGatt1;
+    BluetoothGatt bluetoothGatt2;
     BluetoothGattCharacteristic interval1;
     BluetoothGattCharacteristic interval2;
     BluetoothGattCharacteristic characteristic2;
@@ -43,16 +43,13 @@ public class BluetoothService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         return super.onStartCommand(intent, flags, startId);
     }
-
-
     // device -2
-    private void connectToDevice2() {
+    public void connectToDevice2() {
         BluetoothDevice device = my_bluetooth.getRemoteDevice(deviceAddress2);
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
         bluetoothGatt2 = device.connectGatt(this, false, mygattCallback2);
-
     }
 
     private final BluetoothGattCallback mygattCallback2 = new BluetoothGattCallback() {//once device get connected to app, callback fuctions will call for each state
@@ -65,15 +62,10 @@ public class BluetoothService extends Service {
                 if (ActivityCompat.checkSelfPermission(BluetoothService.this, android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                     return;
                 }
-
-
-
                 gatt.discoverServices();
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 Log.e("conncetion", "disconnceted");
-
                 gatt.close();
-
             }
         }
         @Override
@@ -129,7 +121,6 @@ public class BluetoothService extends Service {
                 System.out.println(value.length);
             }
         }
-
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {

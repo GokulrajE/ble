@@ -1,23 +1,19 @@
 package com.example.ble;
 
-import static androidx.core.content.ContextCompat.getSystemService;
-import static com.example.ble.S3Uploader.BUCKET_NAME;
+import static com.example.ble.MainActivity.filename_left;
+import static com.example.ble.MainActivity.filename_right;
 import static com.example.ble.S3Uploader.getExternalStorageDir;
 
-import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.emoji.bundled.BundledEmojiCompatConfig;
-import androidx.emoji.text.EmojiCompat;
 import androidx.fragment.app.Fragment;
 
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,11 +30,6 @@ import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.anychart.AnyChart;
-import com.anychart.AnyChartView;
-import com.anychart.chart.common.dataentry.DataEntry;
-import com.anychart.charts.Cartesian;
-import com.anychart.core.cartesian.series.Line;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
@@ -52,8 +43,12 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -62,7 +57,7 @@ public class overallChartFragment extends Fragment {
     static FileHandling fileHandling;
     boolean initilized = false;
     private LineChart mChart;
-    public static String dir = "imuble";
+   public static String dir = "Arm_use";
     List<Entry>[] entries;
     List<String>labels= new ArrayList<>();
     List<String>labels1= new ArrayList<>();
@@ -103,8 +98,8 @@ public class overallChartFragment extends Fragment {
         refresh.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                load.setText("loading...");
-                refreshchart();
+//                load.setText("loading...");
+//                refreshchart();
             }
         });
         return rootview;
@@ -112,7 +107,11 @@ public class overallChartFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        updatechart();
+        try {
+            updatechart();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
     @Override
     public void onResume() {
@@ -147,7 +146,6 @@ public class overallChartFragment extends Fragment {
         List<Entry> entries4 = new ArrayList<>();
         float mXValue = 0;
         try {
-
             ListObjectsV2Request request = new ListObjectsV2Request().withBucketName(BUCKET_NAME).withPrefix(foldername);
             ListObjectsV2Result result;
             result = s3Client.listObjectsV2(request);
@@ -267,9 +265,10 @@ public class overallChartFragment extends Fragment {
             e.printStackTrace();
         }
     }
-    public void updatechart(){
+    public void updatechart() throws IOException {
+        List<Entry>[] entries = to_calculate_average();
         try{
-            List<Entry>[] entries = dailyusgae(dir);
+
             if(!entries[0].isEmpty()&&!entries[1].isEmpty()) {
                 LineDataSet dataSet1 = new LineDataSet(entries[0], "l-Arm");
                 LineDataSet dataSet2 = new LineDataSet(entries[1], "r-Arm");
@@ -317,94 +316,59 @@ public class overallChartFragment extends Fragment {
             e.printStackTrace();
         }
     }
-    List<Entry>[] dailyusgae(String dirname){
-
+    List<Entry>[] to_calculate_average() throws IOException {
         List<Entry> data1 = new ArrayList<>();
         List<Entry> data2 = new ArrayList<>();
-        float mXValue=0;
-        File dir = getExternalStorageDir(dirname);
-        if(dir.exists()&& dir.isDirectory()){
-            File[] files = dir.listFiles();
-            mainhandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    System.out.println(files);
-                }
-            });
-
-            if(files != null){
-                for (File file : files) {
-                    if (file.isFile() && file.getName().endsWith(".csv")) {
-                        try {
-                            // Parse CSV file
-                            BufferedReader reader = new BufferedReader(new FileReader(file));
-                            String nextLine;
-                            double calcval1 =0;
-                            double calcval2 =0;
-
-                            double sumValue1 = 0;
-                            double sumValue2 = 0;
-                            while ((nextLine = reader.readLine()) != null) {
-                                // Assuming the CSV structure is: Date, Value1, Value2
-                                String[] parts = nextLine.split(",");
-                                sumValue1 += Double.parseDouble(parts[1]);
-                                sumValue2 += Double.parseDouble(parts[2]);
-                            }
-                            reader.close();
-
-                            // Extract date from filename
-
-                            String dateparts[] =  file.getName().split("\\.");
-                            String  date = dateparts[0];
-                            String dates[] = date.split("-");
-
-                            String dateafter = dates[0]+"/"+dates[1];
-                            System.out.println(dateafter);
-
-                            System.out.println(date);
-                            calcval1 = sumValue1/60;
-                            calcval2 = sumValue2/60;
-                            Entry entry1 = new Entry(mXValue, (float) calcval1);
-                            Entry entry2 = new Entry(mXValue, (float) calcval2);
-                            data1.add(entry1);
-                            data2.add(entry2);
-                            labels1.add(dateafter);
-                            mXValue++;
-
-                        } catch (IOException | NumberFormatException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-
-            }
-            else{
-                System.out.println("files is null");
+        int mXValue=0;
+        File dirname = getExternalStorageDir(dir);
+        if(dirname.exists()&&dirname.isDirectory()){
+            File[] files = dirname.listFiles();
+            for(File file: files){
+              File right_f = new File(file,filename_right);
+              File left_f = new File(file,filename_left);
+              Float value_r = calculateSum(right_f,1)/60;
+              Float value_l = calculateSum(left_f,1)/60;
+              data1.add(new Entry(mXValue,value_l));
+              data2.add(new Entry(mXValue,value_r));
+              String date = file.getName();
+              String[] parts = date.split("-");
+              String final_date = parts[0]+"/"+parts[1];
+              labels1.add(final_date);
             }
         }
-
         return new List[]{data1, data2};
+    }
+    private static float calculateSum(File file, int valueIndex) throws IOException {
+        float sum = 0;
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                String[] parts = line.split(",");
 
+                    sum += Float.parseFloat(parts[valueIndex]);
+            }
+        }
+        return sum;
     }
     private void setup() {
         mChart.getDescription().setEnabled(false);
         mChart.setTouchEnabled(true);
         mChart.setDragEnabled(true);
-        //mChart.setDrawGridBackground(true);
         mChart.setPinchZoom(true);
         mChart.setScaleXEnabled(true);
         mChart.setScaleYEnabled(true);
         mChart.setBackgroundColor(Color.rgb(255, 255, 255));
         XAxis xAxis = mChart.getXAxis();
+        xAxis.setGranularity(1f);
         YAxis yAxisleft = mChart.getAxisLeft();
         yAxisleft.setAxisMinimum(0f);
+        xAxis.setAxisMaximum(1.1f);
         mChart.setVisibleXRangeMaximum(10);
         mChart.moveViewToX(0);
         mChart.getXAxis().setDrawGridLines(false);
         mChart.getAxisLeft().setDrawGridLines(false);
         mChart.getAxisRight().setDrawGridLines(false);
         mChart.getAxisRight().setDrawLabels(false);
-
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         System.out.println("setup");
         mChart.animateX(1500);
