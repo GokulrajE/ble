@@ -98,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothGatt bluetoothGatt1;
     private BluetoothGatt bluetoothGatt2;
     private String deviceAddress1 = "A9:42:49:0E:65:80";//left arm device
-//    private String deviceAddress1;
+//   private String deviceAddress1;
     boolean intervalset2;
     boolean intervalset1;
    private String deviceAddress2 = "47:75:AC:4E:78:36";// right arm deive
