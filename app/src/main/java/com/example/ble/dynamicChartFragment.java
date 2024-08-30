@@ -75,13 +75,8 @@ public class dynamicChartFragment extends Fragment {
     private int mXValue = 0;
     float yValue1,yValue2;
     float suml,sumr;
-    List<Long> TimeStamp_left ;
-    List<Long> TimeStamp_right ;
-    List<Float> value_left ;
-    List<Float> value_right ;
     FileHandling fileHandling;
     public String foldernmae = currentDate();
-//    public String filename = "27-08-2024.csv";
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -98,24 +93,16 @@ public class dynamicChartFragment extends Fragment {
         mChart = rootview.findViewById(R.id.dline_chart);
         System.out.println(mChart);
         setupChart();
-
         //setup();
         return rootview;
     }
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
-        TimeStamp_right = new ArrayList<>();
-        TimeStamp_left = new ArrayList<>();
-        value_left = new ArrayList<>();
-        value_right = new ArrayList<>();
-        DecimalFormat df = new DecimalFormat("#.##");
         File dirname = fileHandling.getExternalStorageDir(dir);
         File folder = new File(dirname,foldernmae);
         File left_file = new File(folder,filename_left);
         File right_file = new File (folder,filename_right);
-//
         if (left_file.exists() && right_file.exists()) {
             // Use ExecutorService to run parallel tasks
             ExecutorService executor = Executors.newFixedThreadPool(2);
@@ -174,7 +161,6 @@ public class dynamicChartFragment extends Fragment {
                     addDataPointToGraph(newData1.getX(),yValue1,1);
                 });
                 viewModel.getData2().observe(getViewLifecycleOwner(), newData2 -> {
-
                     yValue2=newData2.getY();
                     addDataPointToGraph(newData2.getX(),yValue2,2);
                 });
@@ -194,11 +180,9 @@ public class dynamicChartFragment extends Fragment {
         sumr+=yValue2;
         entries1.add(new Entry(mXValue,yValue1));
         entries2.add(new Entry(mXValue,yValue2));
-
         labels.add(xLabel);
         float roundedValue_l = Math.round(suml * 100) / 100f;
         float roundedValue_r = Math.round(sumr * 100) / 100f;
-
         if(getActivity()!=null) {
             TextView text1 = getActivity().findViewById(R.id.left);
             TextView text2 = getActivity().findViewById(R.id.right);
@@ -224,8 +208,6 @@ public class dynamicChartFragment extends Fragment {
         lineData.addDataSet(dataSet2);
         try{
             if(mChart!= null) {
-                float currentXRange = mChart.getHighestVisibleX() - mChart.getLowestVisibleX();
-                float currentCenter = mChart.getLowestVisibleX() + currentXRange / 2;
                 mChart.setData(lineData);
                 XAxis xAxis = mChart.getXAxis();
                 xAxis.setValueFormatter(new XAxisValueFormatter(labels)); // Set custom X-axis labels
@@ -238,7 +220,6 @@ public class dynamicChartFragment extends Fragment {
             }
         }catch (NullPointerException e){
             e.printStackTrace();
-
         }
         mXValue++;
     }

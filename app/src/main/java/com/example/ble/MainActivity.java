@@ -221,11 +221,6 @@ public class MainActivity extends AppCompatActivity {
                 }
                 }
         });
-//        if (checkLocationPermission()) {
-//            startBleScan();
-//        } else {
-//            requestLocationPermission();
-//        }
         five_interval.setOnClickListener(new View.OnClickListener() {
             // 5 sec interval button
             @Override
